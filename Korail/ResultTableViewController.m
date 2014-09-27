@@ -29,6 +29,19 @@ extern NSMutableArray *trainList;
 {
     self.title = @"조회 결과";
     
+    [self searchTrain];
+    [self searchOtherInformation];
+    
+    [super viewDidLoad];
+}
+
+- (void)didReceiveMemoryWarning
+{
+    [super didReceiveMemoryWarning];
+}
+
+- (void)searchTrain
+{
     NSError *error;
     NSData *data = [[NSData alloc] initWithContentsOfURL:[NSURL URLWithString:query]];
     if (data == NULL) {
@@ -37,7 +50,7 @@ extern NSMutableArray *trainList;
         return;
     }
     NSMutableDictionary *dataDictionary = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&error];
-
+    
     trainList = [NSMutableArray arrayWithCapacity:30];
     
     for (NSDictionary *data in dataDictionary) {
@@ -50,23 +63,50 @@ extern NSMutableArray *trainList;
         [t setArrCode:data[@"arr_code"]];
         [t setArrDate:data[@"arr_date"]];
         [t setArrTime:data[@"arr_time"]];
-        [t setTrainStatus:data[@"train_status"]];
-        [t setTrainDelayStatus:data[@"train_delay_status"]];
-            
+        
         [trainList addObject:t];
     }
-    
-    [super viewDidLoad];
 }
 
-- (void)didReceiveMemoryWarning
+//[t setTrainStatus:data[@"train_status"]];
+//[t setTrainDelayStatus:data[@"train_delay_status"]];
+- (void)searchOtherInformation
 {
-    [super didReceiveMemoryWarning];
+    NSString *query2 = nil;
+    
+    NSString *depDate = [trainList[0] depDate];
+    query2 = [NSString stringWithFormat:@"%@%@", @"http://221.166.154.113:8080/searchDelay/?date=", depDate];
+    
+    for (Train *t in trainList) {
+       query2 = [NSString stringWithFormat:@"%@%@%@", query2, @"&train_number=", t.trainNumber];
+    }
+    
+    NSError *error;
+    NSData *data = [[NSData alloc] initWithContentsOfURL:[NSURL URLWithString:query2]];
+    if (data == NULL) {
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"조회 결과가 없습니다." message:nil delegate:self cancelButtonTitle:nil otherButtonTitles:@"확인", nil];
+        [alert show];
+        return;
+    }
+    NSMutableDictionary *dataDictionary = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&error];
+    
+    for (NSDictionary *data in dataDictionary) {
+        NSString *train_number = data[@"train_number"];
+        NSString *train_location = data[@"train_location"];
+        NSString *train_delay_time = data[@"train_delay_time"];
+        
+        for (Train * t in trainList) {
+            if ([t.trainNumber isEqualToString:train_number]) {
+                [t setTrainLocation:train_location];
+                [t setTrainDelayTime:train_delay_time];
+            }
+        }
+    }
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
-    return @"    열차            출발       도착       위치            지연";
+    return @"   열차       출발     도착     위치        지연";
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -84,8 +124,8 @@ extern NSMutableArray *trainList;
     [cell.departureTime setText:t.depTime];
     [cell.arrivalStation setText:t.arrCode];
     [cell.arrivalTime setText:t.arrTime];
-    [cell.trainLocation setText:t.trainStatus];
-    [cell.trainDelayTime setText:t.trainDelayStatus];
+    [cell.trainLocation setText:t.trainLocation];
+    [cell.trainDelayTime setText:t.trainDelayTime];
     
     return cell;
 }
@@ -99,16 +139,6 @@ extern NSMutableArray *trainList;
 {
     // 파일입출력 ? DB ?
     // 열차 정보 저장하기.
-    
-    Train *t = [trainList objectAtIndex:indexPath.row];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
-{
-    if(buttonIndex == [alertView firstOtherButtonIndex])
-    {
-        [self.navigationController popViewControllerAnimated:YES];
-    }
 }
 
 @end

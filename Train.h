@@ -20,8 +20,8 @@ NSMutableArray *trainList;
     NSString *arrCode;
     NSString *arrDate;
     NSString *arrTime;
-    NSString *trainStatus;
-    NSString *trainDelayStatus;
+    NSString *trainLocation;
+    NSString *trainDelayTime;
 }
 
 @property (getter=getTrainType) NSString *trainType;
@@ -32,7 +32,7 @@ NSMutableArray *trainList;
 @property (getter=getArrCode) NSString *arrCode;
 @property NSString *arrDate;
 @property (getter=getArrTime) NSString *arrTime;
-@property NSString *trainStatus;
-@property NSString *trainDelayStatus;
+@property NSString *trainLocation;
+@property NSString *trainDelayTime;
 
 @end

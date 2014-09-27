@@ -18,8 +18,8 @@
 @synthesize arrCode;
 @synthesize arrDate;
 @synthesize arrTime;
-@synthesize trainStatus;
-@synthesize trainDelayStatus;
+@synthesize trainLocation;
+@synthesize trainDelayTime;
 
 extern NSMutableDictionary *codeNameStations;
 

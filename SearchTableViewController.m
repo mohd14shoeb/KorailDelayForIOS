@@ -8,13 +8,13 @@
 
 #import "SearchTableViewController.h"
 #import "Stations.h"
-
-UIDatePicker *datePicker;
+#import "ActionSheetPicker-3.0/Pickers/ActionSheetDatePicker.h"
 
 @implementation SearchTableViewController
 
 @synthesize train;
-@synthesize dateTime;
+@synthesize date;
+@synthesize time;
 @synthesize departureStation;
 @synthesize arrivalStation;
 
@@ -34,26 +34,33 @@ extern NSMutableDictionary *nameCodeStations;
     Stations *stations = [[Stations alloc] init];
     [stations initCodeNameStations];
     [stations initNameCodeStations];
+    
+    self.selectedDate = [NSDate date];
+    self.selectedTime = [NSDate date];
+    
     [self setCurrentDateTime];
-//    UIBarButtonItem *displayResultItem = [[UIBarButtonItem alloc] initWithTitle:@"검색" style:UIBarButtonItemStylePlain target:self action:@selector(displayResult:)];
-//    self.navigationItem.rightBarButtonItem = displayResultItem;
+
     [super viewDidLoad];
-}
-
-- (void)selectedDepartureStation:(NSString *)station
-{
-    departureStation.text = station;
-}
-
-- (void)selectedArrivalStation:(NSString *)station
-{
-    arrivalStation.text = station;
 }
 
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
 }
+
+- (void)setCurrentDateTime
+{
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"yyyy/MM/dd"];
+    NSString *currentDate = [dateFormatter stringFromDate:[NSDate date]];
+    
+    [dateFormatter setDateFormat:@"a hh:mm"];
+    NSString *currentTime = [dateFormatter stringFromDate:[NSDate date]];
+    
+    date.text = currentDate;
+    time.text = currentTime;
+}
+
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
@@ -64,26 +71,31 @@ extern NSMutableDictionary *nameCodeStations;
         [trainAlertView show];
     }
     else if (indexPath.row == 1) {
-        // actionsheet - 날짜 & 시간
-        NSString *title = UIDeviceOrientationIsLandscape([UIDevice currentDevice].orientation) ? @"\n\n\n\n\n\n\n\n\n" : @"\n\n\n\n\n\n\n\n\n\n\n\n" ;
-        UIActionSheet *dateTimeActionSheet;
-        dateTimeActionSheet = [[UIActionSheet alloc] initWithTitle:[NSString stringWithFormat:@"%@%@", title, NSLocalizedString(@"", @"")] delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:@"선택", nil];
-        [dateTimeActionSheet showInView:self.view];
-        datePicker = [[UIDatePicker alloc] init];
-        datePicker.datePickerMode = UIDatePickerModeDateAndTime;
-        [dateTimeActionSheet addSubview:datePicker];
+        UILabel * sender = nil;
+        
+        AbstractActionSheetPicker* datePicker = [[ActionSheetDatePicker alloc] initWithTitle:@"" datePickerMode:UIDatePickerModeDate selectedDate:self.selectedDate target:self action:@selector(dateWasSelected:element:) origin:sender];
+        datePicker.hideCancel = YES;
+        [datePicker showActionSheetPicker];
     }
     else if (indexPath.row == 2) {
+        UILabel * sender = nil;
+        
+        ActionSheetDatePicker *timePicker = [[ActionSheetDatePicker alloc] initWithTitle:@"" datePickerMode:UIDatePickerModeTime selectedDate:[NSDate date] target:self action:@selector(timeWasSelected:element:) origin:sender];
+        timePicker.hideCancel = YES;
+        timePicker.minuteInterval = 1;
+        [timePicker showActionSheetPicker];
+
+    }
+    else if (indexPath.row == 3) {
         SearchDepartureStationTableViewController *searchDepartureStationView = [[SearchDepartureStationTableViewController alloc] init];
         [searchDepartureStationView setDelegate:self];
         [[self navigationController] pushViewController:searchDepartureStationView animated:YES];
     }
-    else if (indexPath.row == 3) {
+    else if (indexPath.row == 4) {
         SearchArrivalStationTableViewController *searchArrivalStationView = [[SearchArrivalStationTableViewController alloc] init];
         [searchArrivalStationView setDelegate:self];
         [[self navigationController] pushViewController:searchArrivalStationView animated:YES];
     }
-    /////////////////////////////////////////////
 }
 
 // 취소가 0
@@ -111,55 +123,58 @@ extern NSMutableDictionary *nameCodeStations;
         train.text = @"ITX-청춘";
 }
 
-// 확인이 0
-- (void)actionSheet:(UIActionSheet *)trainActionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
-{
-    if(buttonIndex == 0) {
-        NSDate *date = datePicker.date;
-        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-        [dateFormatter setDateFormat:@"yyyy/MM/dd a hh:mm"];
-        NSString* dateString = [dateFormatter stringFromDate:date];
-        dateTime.text = dateString;
-    }
+- (void)dateWasSelected:(NSDate *)selectedDate element:(id)element {
+    self.selectedDate = selectedDate;
+    
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"yyyy/MM/dd"];
+    self.date.text = [dateFormatter stringFromDate:selectedDate];
 }
 
-- (void)setCurrentDateTime
+-(void)timeWasSelected:(NSDate *)selectedTime element:(id)element {
+    self.selectedTime = selectedTime;
+    
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"a hh:mm"];
+    self.time.text = [dateFormatter stringFromDate:selectedTime];
+}
+
+- (void)selectedDepartureStation:(NSString *)station
 {
-    NSDateFormatter *today = [[NSDateFormatter alloc] init];
-    [today setDateFormat:@"yyyy/MM/dd a hh:mm"];
-    NSString *currentDateTime = [today stringFromDate:[NSDate date]];
-    dateTime.text = currentDateTime;
+    departureStation.text = station;
+}
+
+- (void)selectedArrivalStation:(NSString *)station
+{
+    arrivalStation.text = station;
 }
 
 // 파싱 후 전역변수에 주소담고 결과 받아오고 파싱.
-//- (IBAction)displayResult:(id)sender
 - (NSString *)setQuery
 {
     NSString *trainForResult = self.train.text;
-    NSString *dateTimeForResult = self.dateTime.text;
-    NSString *departureStationForResult = self.departureStation.text;
-    NSString *arrivalStationForResult = self.arrivalStation.text;
+    NSString *dateForResult = self.date.text;
+    NSString *timeForResult = self.time.text;
+    NSString *departureStationResult = self.departureStation.text;
+    NSString *arrivalStationResult = self.arrivalStation.text;
     
     NSString *trainResult = [self getTrain:trainForResult];
-    NSString *dateResult = [self getDate:dateTimeForResult];
-    NSString *timeResult = [self getTime:dateTimeForResult];
-    NSString *departureStationResult = [self getDepartureStation:departureStationForResult];
-    NSString *arrivalStationResult = [self getArrivalStation:arrivalStationForResult];
+    NSString *dateResult = [self getDate:dateForResult];
+    NSString *timeResult = [self getTime:timeForResult];
     
-    // "http://14.63.219.205:8000/searchTrain/?train=" + train + "&date=" + date + "&time=" + time + "&dep=" + dep + "&arr=" + arr;
+    // "http://221.166.154.113:8080/searchTrain/?train=" + train + "&date=" + date + "&time=" + time + "&dep=" + dep + "&arr=" + arr;
     query = nil;
-    query = [NSString stringWithFormat:@"%@%@%@%@%@%@%@%@%@%@", @"http://14.63.219.205:8000/searchTrain/?train=", trainResult,
-             @"&date=", dateResult, @"&time=", timeResult, @"&dep=", departureStationResult, @"&arr=", arrivalStationResult];
+    query = [NSString stringWithFormat:@"%@%@%@%@%@%@%@%@%@%@", @"http://221.166.154.113:8080/searchTrain/?train=", trainResult, @"&date=", dateResult, @"&time=", timeResult, @"&dep=", departureStationResult, @"&arr=", arrivalStationResult];
     
-    //ResultTableViewController *resultController = [[ResultTableViewController alloc] init];
-    //[[self navigationController] pushViewController:resultController animated:YES];
+    NSString *encodedQuery = [query stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     
-    return query;
+    return encodedQuery;
 }
 
 - (NSString *)getTrain:(NSString *)trainForResult
 {
     NSString *trainResult = nil;
+    
     if([trainForResult isEqualToString:@"전체"])
         trainResult = @"05";
     else if([trainForResult isEqualToString:@"KTX"])
@@ -182,12 +197,9 @@ extern NSMutableDictionary *nameCodeStations;
     return trainResult;
 }
 
-- (NSString *)getDate:(NSString *)dateTimeForResult
+- (NSString *)getDate:(NSString *)dateForResult
 {
-    NSArray *resultArray = [dateTimeForResult componentsSeparatedByString:@" "];
-    NSString *date = [resultArray objectAtIndex:0];
-    
-    NSArray *dateArray = [date componentsSeparatedByString:@"/"];
+    NSArray *dateArray = [dateForResult componentsSeparatedByString:@"/"];
     NSString *year = [dateArray objectAtIndex:0];
     NSString *month = [dateArray objectAtIndex:1];
     NSString *day = [dateArray objectAtIndex:2];
@@ -197,21 +209,23 @@ extern NSMutableDictionary *nameCodeStations;
     return dateResult;
 }
 
-// time : 오전 12:10, 오후 07:10
-- (NSString *)getTime:(NSString *)dateTimeForResult
+// time : 10:29 PM
+- (NSString *)getTime:(NSString *)timeForResult
 {
     NSString *resultHour = nil;
     NSString *resultMinute = nil;
-    NSArray *resultArray = [dateTimeForResult componentsSeparatedByString:@" "];
-    NSString *ampm = [resultArray objectAtIndex:1];
-    NSString *time = [resultArray objectAtIndex:2];
-    NSArray *timeResultArray = [time componentsSeparatedByString:@":"];
+    
+    NSArray *resultArray = [timeForResult componentsSeparatedByString:@" "];
+    NSString *ampm = [resultArray objectAtIndex:0];
+    NSString *tempTime = [resultArray objectAtIndex:1];
+    
+    NSArray *timeResultArray = [tempTime componentsSeparatedByString:@":"];
     NSString *hour = [timeResultArray objectAtIndex:0];
     NSString *minute = [timeResultArray objectAtIndex:1];
     int iHour = [hour intValue];
     int iMinute = [minute intValue];
     
-    if ([ampm isEqualToString:@"오전"]) {
+    if ([ampm isEqualToString:@"AM"]) {
         if (iHour == 12)
             iHour = 0;
     }
@@ -234,18 +248,6 @@ extern NSMutableDictionary *nameCodeStations;
     NSString *resultTime = [NSString stringWithFormat:@"%@%@%@", resultHour, resultMinute, @"00"];
     
     return resultTime;
-}
-
-- (NSString *)getDepartureStation:(NSString *)departureStationForResult
-{
-    NSString *departureStationResult = [nameCodeStations objectForKey:departureStationForResult];
-    return departureStationResult;
-}
-
-- (NSString *)getArrivalStation:(NSString *)arrivalStationForResult
-{
-    NSString *arrivalStationResult = [nameCodeStations objectForKey:arrivalStationForResult];
-    return arrivalStationResult;
 }
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender

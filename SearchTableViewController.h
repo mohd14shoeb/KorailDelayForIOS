@@ -17,9 +17,13 @@ NSString *query;
 @interface SearchTableViewController : UITableViewController<SearchDepartureStation>
 
 @property (weak, nonatomic) IBOutlet UILabel *train;
-@property (weak, nonatomic) IBOutlet UILabel *dateTime;
+@property (weak, nonatomic) IBOutlet UILabel *date;
+@property (weak, nonatomic) IBOutlet UILabel *time;
 @property (weak, nonatomic) IBOutlet UILabel *departureStation;
 @property (weak, nonatomic) IBOutlet UILabel *arrivalStation;
+
+@property (nonatomic, strong) NSDate *selectedDate;
+@property (nonatomic, strong) NSDate *selectedTime;
 
 -(void)selectedDepartureStation:(NSString *)station;
 -(void)selectedArrivalStation:(NSString *)station;
